@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deutsche Geschichte – Flaggen zuordnen</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f0e8;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.4em;
+      color: #2c2c2c;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.95em;
+      color: #555;
+      margin-bottom: 30px;
+    }
+
+    /* ── ZEITLEISTE ── */
+    .timeline-wrapper {
+      position: relative;
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+    .timeline-axis {
+      display: flex;
+      align-items: flex-start;
+      position: relative;
+      min-width: 900px;
+      padding: 0 40px;
+    }
+    .timeline-axis::before {
+      content: '';
+      position: absolute;
+      top: 110px;
+      left: 0; right: 0;
+      height: 4px;
+      background: #8b7355;
+      z-index: 0;
+    }
+    .station {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      min-width: 140px;
+    }
+    .station::after {
+      content: '';
+      width: 14px; height: 14px;
+      background: #8b7355;
+      border: 3px solid #f5f0e8;
+      border-radius: 50%;
+      position: absolute;
+      top: 104px;
+      z-index: 1;
+    }
+    .station-card {
+      background: white;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 10px;
+      width: 130px;
+      text-align: center;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.12);
+    }
+    .station-years {
+      font-size: 0.8em;
+      font-weight: bold;
+      color: #8b7355;
+      margin-bottom: 4px;
+    }
+    .station-name {
+      font-size: 0.78em;
+      color: #333;
+      margin-bottom: 8px;
+      min-height: 32px;
+    }
+    .station-img {
+      width: 110px;
+      height: 65px;
+      object-fit: cover;
+      border-radius: 5px;
+      display: block;
+      margin: 0 auto 8px auto;
+      cursor: zoom-in;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .station-img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .letter-badge {
+      font-size: 0.75em;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    /* ── DROP-ZONE ── */
+    .drop-zone {
+      width: 110px;
+      height: 66px;
+      border: 2px dashed #aaa;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7em;
+      color: #aaa;
+      margin: 6px auto 0 auto;
+      transition: background 0.2s, border-color 0.2s;
+      cursor: default;
+    }
+    .drop-zone.over    { background: #e8f4e8; border-color: #4caf50; color: #4caf50; }
+    .drop-zone.correct { border: 2px solid #4caf50; background: #e8f4e8; }
+    .drop-zone.wrong   { border: 2px solid #e53935; background: #fde8e8; animation: shake 0.4s; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%     { transform: translateX(-6px); }
+      75%     { transform: translateX(6px); }
+    }
+
+    /* ── FLAGGEN-POOL ── */
+    .flag-pool-section { margin-top: 50px; }
+    .flag-pool-title {
+      text-align: center;
+      font-size: 1em;
+      font-weight: bold;
+      color: #2c2c2c;
+      margin-bottom: 16px;
+    }
+    .flag-pool {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      border: 2px solid #ccc;
+      max-width: 900px;
+      margin: 0 auto;
+      min-height: 100px;
+    }
+    .flag-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+    .flag-item:active { cursor: grabbing; }
+    .flag-item.dragging { opacity: 0.4; transform: scale(0.95); }
+    /* ÄNDERUNG 3+4: keine .placed-Klasse mehr die den Pool-Eintrag ausblendet,
+       stattdessen bleibt die Flagge im Pool sichtbar und verschiebbar */
+    .flag-img {
+      width: 110px;
+      height: 66px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #bbb;
+      display: block;
+    }
+    /* ÄNDERUNG 4: .flag-label komplett entfernt – kein Label mehr */
+
+    /* ── OVERLAY ── */
+    #map-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.78);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+    #map-overlay.active { display: flex; }
+    #map-overlay-inner {
+      position: relative;
+      max-width: 90vw;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    #map-overlay-img {
+      max-width: 100%;
+      max-height: 80vh;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      object-fit: contain;
+      cursor: default;
+    }
+    #map-overlay-caption {
+      color: white;
+      font-size: 1.05em;
+      font-weight: bold;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    }
+    #map-overlay-close {
+      position: absolute;
+      top: -16px;
+      right: -16px;
+      background: white;
+      border: none;
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      font-size: 1.1em;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── BUTTONS ── */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px 24px;
+      font-size: 0.95em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    #btn-check    { background: #3a6ea5; color: white; }
+    #btn-check:hover { background: #2d5880; }
+    #btn-reset    { background: #888; color: white; }
+    #btn-reset:hover { background: #666; }
+    #btn-solution { background: #e8a020; color: white; }
+    #btn-solution:hover { background: #c07010; }
+
+    /* ── ERGEBNIS ── */
+    #result-box {
+      text-align: center;
+      font-size: 1.1em;
+      font-weight: bold;
+      margin-top: 20px;
+      min-height: 30px;
+    }
+    .result-success { color: #2e7d32; }
+    .result-partial { color: #e65100; }
+  </style>
+</head>
+<body>
+
+<h1>Nationalflaggen im Wandel der Zeit</h1>
+<p class="subtitle">Ziehe die richtige Flagge in das Feld der jeweiligen Epoche! Klicke auf eine Karte zum Vergrößern.</p>
+
+<!-- ── OVERLAY ── -->
+<div id="map-overlay">
+  <div id="map-overlay-inner">
+    <button id="map-overlay-close" title="Schließen">✕</button>
+    <img id="map-overlay-img" src="" alt=""/>
+    <div id="map-overlay-caption"></div>
+  </div>
+</div>
+
+<!-- ── ZEITLEISTE ── -->
+<div class="timeline-wrapper">
+  <div class="timeline-axis">
+
+    <div class="station">
+      <div class="station-card">
+        <div class="station-years">ca. 1830–1849</div>
+        <div class="station-name">Vormärz &amp; Revolution 1848/49</div>
+        <img src="map-1848.png" class="station-img"
+             data-caption="Vormärz &amp; Revolution 1848/49"
+             alt="Karte 1848"/>
+        <div class="drop-zone" id="drop-A" data-target="flag-A">Flagge<br/>ablegen</div>
+      </div>
+    </div>
+
+    <div class="station">
+      <div class="station-card">
+        <div class="station-years">1871–1918</div>
+        <div class="station-name">Deutsches Kaiserreich</div>
+        <img src="map-kaiserreich.png" class="station-img"
+             data-caption="Deutsches Kaiserreich 1871–1918"
+             alt="Karte Kaiserreich"/>
+        <div class="drop-zone" id="drop-C" data-target="flag-C">Flagge<br/>ablegen</div>
+      </div>
+    </div>
+
+    <div class="station">
+      <div class="station-card">
+        <div class="station-years">1919–1933</div>
+        <div class="station-name">Weimarer Republik</div>
+        <img src="map-weimar.png" class="station-img"
+             data-caption="Weimarer Republik 1919–1933"
+             alt="Karte Weimar"/>
+        <div class="drop-zone" id="drop-B" data-target="flag-B">Flagge<br/>ablegen</div>
+      </div>
+    </div>
+
+    <div class="station">
+      <div class="station-card">
+        <div class="station-years">1933–1945</div>
+        <div class="station-name">Deutsches Reich / NS-Diktatur</div>
+        <img src="map-ns.png" class="station-img"
+             data-caption="Deutsches Reich / NS-Diktatur 1933–1945"
+             alt="Karte NS"/>
+        <div class="drop-zone" id="drop-E" data-target="flag-E">Flagge<br/>ablegen</div>
+      </div>
+    </div>
+
+    <div class="station">
+      <div class="station-card">
+        <div class="station-years">1949–1990</div>
+        <div class="station-name">Deutsche Demokratische Republik</div>
+        <img src="map-brdddr.png" class="station-img"
+             data-caption="BRD und DDR 1949–1990"
+             alt="Karte DDR"/>
+        <div class="drop-zone" id="drop-F" data-target="flag-F">Flagge<br/>ablegen</div>
+      </div>
+    </div>
+
+    <div class="station">
+      <div class="station-card">
+        <div class="station-years">1949–heute</div>
+        <div class="station-name">Bundesrepublik Deutschland</div>
+        <img src="map-brd.png" class="station-img"
+             data-caption="Bundesrepublik Deutschland ab 1991"
+             alt="Karte BRD"/>
+        <div class="drop-zone" id="drop-D" data-target="flag-D">Flagge<br/>ablegen</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── FLAGGEN-POOL (gemischte Reihenfolge, keine Labels) ── -->
+<div class="flag-pool-section">
+  <div class="flag-pool" id="flag-pool">
+
+    <!-- ÄNDERUNG 2: Reihenfolge durchgemischt: C, E, A, F, B, D -->
+    <div class="flag-item" id="flag-C" draggable="true">
+      <img src="flag-kaiserreich.png" class="flag-img" alt="Flagge C"/>
+    </div>
+
+    <div class="flag-item" id="flag-E" draggable="true">
+      <img src="flag-ns.png" class="flag-img" alt="Flagge E"/>
+    </div>
+
+    <div class="flag-item" id="flag-A" draggable="true">
+      <img src="flag-1848.png" class="flag-img" alt="Flagge A"/>
+    </div>
+
+    <div class="flag-item" id="flag-F" draggable="true">
+      <img src="flag-ddr.png" class="flag-img" alt="Flagge F"/>
+    </div>
+
+    <div class="flag-item" id="flag-B" draggable="true">
+      <img src="flag-weimar.png" class="flag-img" alt="Flagge B"/>
+    </div>
+
+    <div class="flag-item" id="flag-D" draggable="true">
+      <img src="flag-brd.png" class="flag-img" alt="Flagge D"/>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── BUTTONS ── -->
+<div class="controls">
+  <button id="btn-check">Auswertung</button>
+  <button id="btn-solution">Lösung zeigen</button>
+  <button id="btn-reset">Neu starten</button>
+</div>
+<div id="result-box"></div>
+
+<script>
+  // ── Zustand ──
+  // dropped[stationKey] = flagId | null
+  const dropped = {};
+  let draggedId  = null;
+  let dragSource = null; // 'pool' | stationKey
+
+  // ── Overlay ──
+  const overlay     = document.getElementById('map-overlay');
+  const overlayImg  = document.getElementById('map-overlay-img');
+  const overlayCap  = document.getElementById('map-overlay-caption');
+  const overlayClose = document.getElementById('map-overlay-close');
+
+  document.querySelectorAll('.station-img').forEach(img => {
+    img.addEventListener('click', () => {
+      overlayImg.src = img.src;
+      overlayImg.alt = img.alt;
+      overlayCap.textContent = img.dataset.caption || '';
+      overlay.classList.add('active');
+    });
+  });
+
+  overlayClose.addEventListener('click', e => {
+    e.stopPropagation();
+    overlay.classList.remove('active');
+  });
+  overlay.addEventListener('click', () => {
+    overlay.classList.remove('active');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') overlay.classList.remove('active');
+  });
+
+  // ── Drag von Pool-Flaggen ──
+  document.querySelectorAll('.flag-item').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      draggedId  = item.id;
+      dragSource = 'pool';
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+    });
+  });
+
+  // ── Drop-Zonen ──
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+
+    // Drag von einer bereits belegten Drop-Zone aus
+    zone.addEventListener('dragstart', e => {
+      const stationKey = zone.id.replace('drop-', '');
+      if (!dropped[stationKey]) return;
+      draggedId  = dropped[stationKey];
+      dragSource = stationKey;
+      e.dataTransfer.effectAllowed = 'move';
+      zone.style.opacity = '0.5';
+    });
+    zone.addEventListener('dragend', () => {
+      zone.style.opacity = '';
+    });
+
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('over');
+      e.dataTransfer.dropEffect = 'move';
+    });
+
+    zone.addEventListener('dragleave', () => {
+      zone.classList.remove('over');
+    });
+
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('over');
+      if (!draggedId) return;
+
+      const targetKey = zone.id.replace('drop-', '');
+
+      // ÄNDERUNG 3: Flagge die schon in der Zielzone liegt → zurück in den Pool
+      if (dropped[targetKey] && dropped[targetKey] !== draggedId) {
+        // Die verdrängte Flagge wieder freigeben (zurück in Pool sichtbar machen)
+        const displaced = dropped[targetKey];
+        delete dropped[targetKey];
+        clearZone(targetKey);
+        // Pool-Eintrag wieder vollständig nutzbar machen
+        const displacedEl = document.getElementById(displaced);
+        if (displacedEl) {
+          displacedEl.style.opacity   = '';
+          displacedEl.style.pointerEvents = '';
+        }
+      }
+
+      // Falls die Flagge vorher in einer anderen Zone lag → die leeren
+      if (dragSource && dragSource !== 'pool' && dragSource !== targetKey) {
+        delete dropped[dragSource];
+        clearZone(dragSource);
+      }
+
+      // Flagge in Zielzone setzen
+      dropped[targetKey] = draggedId;
+      renderZone(targetKey, draggedId);
+
+      // Pool-Eintrag dezent ausgrauen (aber weiterhin draggable!)
+      const flagEl = document.getElementById(draggedId);
+      if (flagEl) {
+        flagEl.style.opacity      = '0.35';
+        flagEl.style.pointerEvents = 'auto'; // bleibt ziehbar
+      }
+
+      // Feedback-Klassen zurücksetzen
+      zone.classList.remove('correct', 'wrong');
+      document.getElementById('result-box').textContent = '';
+
+      draggedId  = null;
+      dragSource = null;
+    });
+  });
+
+  // ── Zone rendern ──
+  function renderZone(stationKey, flagId) {
+    const zone   = document.getElementById('drop-' + stationKey);
+    const flagEl = document.getElementById(flagId);
+    if (!zone || !flagEl) return;
+
+    const imgSrc = flagEl.querySelector('.flag-img').src;
+    const imgAlt = flagEl.querySelector('.flag-img').alt;
+
+    // ÄNDERUNG 4: Nur das Bild – kein Label
+    zone.innerHTML = '';
+    zone.setAttribute('draggable', 'true');
+
+    const img = document.createElement('img');
+    img.src   = imgSrc;
+    img.alt   = imgAlt;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:4px;display:block;';
+    zone.appendChild(img);
+  }
+
+  // ── Zone leeren ──
+  function clearZone(stationKey) {
+    const zone = document.getElementById('drop-' + stationKey);
+    if (!zone) return;
+    zone.innerHTML         = 'Flagge<br/>ablegen';
+    zone.removeAttribute('draggable');
+    zone.style.opacity     = '';
+    zone.classList.remove('correct', 'wrong');
+  }
+
+  // ── AUSWERTUNG ──
+  document.getElementById('btn-check').addEventListener('click', () => {
+    let correct = 0;
+    const total = 6;
+
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+      const stationKey = zone.id.replace('drop-', '');
+      const expected   = 'flag-' + stationKey;
+      const actual     = dropped[stationKey];
+
+      zone.classList.remove('correct', 'wrong');
+      if (actual === expected) {
+        zone.classList.add('correct');
+        correct++;
+      } else if (actual) {
+        zone.classList.add('wrong');
+      }
+    });
+
+    const box = document.getElementById('result-box');
+    if (correct === total) {
+      box.textContent = '🎉 Alle ' + total + ' Flaggen richtig zugeordnet!';
+      box.className   = 'result-success';
+    } else {
+      box.textContent = correct + ' von ' + total + ' richtig. Grün = korrekt, Rot = falsch.';
+      box.className   = 'result-partial';
+    }
+  });
+
+  // ── LÖSUNG ZEIGEN ──
+  document.getElementById('btn-solution').addEventListener('click', () => {
+    resetAll();
+
+    ['A','B','C','D','E','F'].forEach(key => {
+      const flagId = 'flag-' + key;
+      dropped[key] = flagId;
+      renderZone(key, flagId);
+
+      const flagEl = document.getElementById(flagId);
+      if (flagEl) {
+        flagEl.style.opacity      = '0.35';
+        flagEl.style.pointerEvents = 'auto';
+      }
+
+      const zone = document.getElementById('drop-' + key);
+      if (zone) zone.classList.add('correct');
+    });
+
+    const box = document.getElementById('result-box');
+    box.textContent = '💡 Musterlösung wird angezeigt.';
+    box.className   = 'result-partial';
+  });
+
+  // ── NEU STARTEN ──
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    resetAll();
+  });
+
+  function resetAll() {
+    // Alle Zonen leeren
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+      const key = zone.id.replace('drop-', '');
+      clearZone(key);
+    });
+    // Alle Pool-Flaggen vollständig zurücksetzen
+    document.querySelectorAll('.flag-item').forEach(item => {
+      item.style.opacity      = '';
+      item.style.pointerEvents = '';
+      item.classList.remove('dragging');
+    });
+    // Zustand löschen
+    for (const key in dropped) delete dropped[key];
+    document.getElementById('result-box').textContent = '';
+    draggedId  = null;
+    dragSource = null;
+  }
+
+</script>
+</body>
+</html>
+
