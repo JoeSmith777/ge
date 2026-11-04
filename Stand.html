@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaiserschmarrn-Stand (eifrei)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; background: #2b1a14; color: #3a2a22; }
+  .slide {
+    position: absolute; inset: 0; display: none; flex-direction: column;
+    justify-content: center; padding: 4vh 7vw; background: #fff8ee;
+  }
+  .slide.active { display: flex; animation: fade .4s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+  h1 { font-size: 5.2vh; color: #8a2d1c; margin-bottom: 3vh; border-bottom: .6vh solid #e0a43a; padding-bottom: 1.5vh; }
+  h2 { font-size: 3vh; color: #8a2d1c; margin-bottom: 1vh; }
+  ul { list-style: none; font-size: 3vh; line-height: 1.6; }
+  ul li::before { content: "• "; color: #e0a43a; font-weight: bold; }
+  .title { background: linear-gradient(135deg, #8a2d1c, #5c1a10); color: #fff8ee; text-align: center; align-items: center; }
+  .title h1 { font-size: 8vh; color: #ffd98a; border: none; }
+  .title p { font-size: 3.5vh; margin-top: 1vh; }
+  .cols { display: flex; gap: 2vw; }
+  .card { flex: 1; background: #fff; border-radius: 1.5vh; padding: 3vh 2vw; box-shadow: 0 .5vh 2vh rgba(0,0,0,.15); border-top: 1vh solid #e0a43a; }
+  .card ul { font-size: 2.4vh; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; font-size: 2.5vh; background: #fff; }
+  th { background: #8a2d1c; color: #fff8ee; text-align: left; }
+  th, td { padding: 1.3vh 1.5vw; border-bottom: 1px solid #ecd9bd; }
+  tr.sum td { font-weight: bold; background: #fbeccc; }
+  .hot { color: #c0392b; font-weight: bold; }
+  .cold { color: #1f6fa8; font-weight: bold; }
+  .info { background: #eaf4ea; border-left: 1vh solid #3a8a3a; padding: 2vh 2vw; font-size: 2.7vh; margin-bottom: 2vh; border-radius: .8vh; }
+  .warn { background: #fdeaea; border-left: 1vh solid #c0392b; padding: 2vh 2vw; font-size: 2.6vh; margin-top: 2vh; border-radius: .8vh; }
+  .small { font-size: 2.3vh; }
+  .nav { position: fixed; bottom: 2vh; left: 0; right: 0; text-align: center; font-size: 2vh; z-index: 10; pointer-events: none; }
+  .bar { position: fixed; top: 0; left: 0; height: .8vh; background: #e0a43a; transition: width .3s; z-index: 10; }
+</style>
+</head>
+<body>
+
+<div class="bar" id="bar"></div>
+
+<!-- 1 -->
+<section class="slide title active">
+  <h1>Kaiserschmarrn-Stand</h1>
+  <p>60 Portionen in drei Varianten, ohne Ei im Teig</p>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h1>Angebot und Preise</h1>
+  <table>
+    <tr><th>Variante</th><th>Beschreibung</th><th>Preis</th><th>Portionen</th><th>Umsatz</th></tr>
+    <tr><td>Klassisch</td><td>Puderzucker und Apfelmus</td><td>3,50 €</td><td>20</td><td>70 €</td></tr>
+    <tr><td>Herzhaft</td><td>Käse, Kräuter, Frühlingszwiebeln, Kräuterquark</td><td>4,00 €</td><td>20</td><td>80 €</td></tr>
+    <tr><td>Weihnachtlich</td><td>Apfel-Zimt-Kompott, Rosinen, Puderzucker</td><td>4,00 €</td><td>20</td><td>80 €</td></tr>
+    <tr class="sum"><td>Gesamt</td><td>ca. 180–200 g pro Portion</td><td></td><td>60</td><td>230 €</td></tr>
+  </table>
+  <ul style="margin-top:3vh; font-size:2.6vh">
+    <li>Idee: Kombipreis mit Getränk</li>
+    <li>Zutaten- und Verpackungskosten gehen noch ab</li>
+  </ul>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h1>Warum ohne Ei?</h1>
+  <div class="info">Kein rohes Ei bedeutet <b>kein Salmonellenrisiko</b> und deutlich einfachere Vorbereitung.</div>
+  <ul>
+    <li>Keine Eier-Logistik: keine Schalen, keine Kühlkette für Eier, keine Kreuzkontamination</li>
+    <li>Apfelmus bindet den Teig und hält ihn saftig</li>
+    <li>Backpulver und Mineralwasser machen ihn locker</li>
+    <li>Fertiger Kaiserschmarrn lässt sich einfrieren und später aufwärmen</li>
+    <li>Weniger Allergene: Ei und Milch entfallen im Teig</li>
+  </ul>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h1>Rezept pro Charge (20 Portionen)</h1>
+  <div class="cols">
+    <div class="card">
+      <h2>Trockenmischung</h2>
+      <ul>
+        <li>2,5 kg Weizenmehl (Type 405 oder 550)</li>
+        <li>250 g Speisestärke</li>
+        <li>60 g Backpulver</li>
+        <li>20 g Salz</li>
+        <li>Süß: 250 g Zucker, 30 g Vanillezucker</li>
+        <li>Optional: 1 TL Kurkuma</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Flüssige Zutaten</h2>
+      <ul>
+        <li>4,0 l Haferdrink, ungesüßt</li>
+        <li>1,0 l Mineralwasser mit viel Kohlensäure</li>
+        <li>150 ml Pflanzenöl</li>
+        <li>500 g Apfelmus</li>
+        <li>45 ml Apfelessig oder Zitronensaft</li>
+        <li>Zum Braten: ca. 400–500 g Backmargarine oder Öl</li>
+      </ul>
+    </div>
+  </div>
+  <div class="warn"><b>Probecharge Pflicht:</b> Mengen sind hochgerechnet. Vorab 2–3 Portionen testen, auch Einfrieren und Aufwärmen. Zu fest: 100–200 ml Drink dazu. Zu flüssig: 100–200 g Mehl dazu.</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h1>Varianten und Beläge</h1>
+  <div class="cols">
+    <div class="card">
+      <h2>Klassisch</h2>
+      <ul>
+        <li>1,5 kg Apfelmus</li>
+        <li>150 g Puderzucker</li>
+        <li>Optional 300 g Rosinen</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Herzhaft</h2>
+      <ul>
+        <li>Teig ohne Zucker, 15 g mehr Salz, Pfeffer, Paprika</li>
+        <li>800 g Käse, 300 g Frühlingszwiebeln, 100 g Kräuter</li>
+        <li>1,2 kg Kräuterquark</li>
+        <li>Optional: Prise Kala Namak</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Weihnachtlich</h2>
+      <ul>
+        <li>2–2,5 kg Äpfel als Kompott</li>
+        <li>150 g Rosinen, 15 g Zimt</li>
+        <li>150–200 g Zucker</li>
+        <li>100 g Puderzucker</li>
+      </ul>
+    </div>
+  </div>
+  <p class="small" style="margin-top:2vh">Plus 10 % Reserve. Alle Beläge am Vortag vorbereiten.</p>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h1>Vorbereitung: Was wann?</h1>
+  <table>
+    <tr><th>Wann</th><th>Aufgabe</th></tr>
+    <tr><td>1–2 Wochen vorher</td><td>Probecharge backen, Strom und Genehmigungen klären, Schilder erstellen</td></tr>
+    <tr><td>Tage vorher</td><td>Kaiserschmarrn backen, flach abkühlen, einfrieren (bis 3 Monate haltbar, ohne Puderzucker)</td></tr>
+    <tr><td>1 Tag vorher</td><td>Trockenmischungen abwiegen und beschriften, Kompott kochen, Käse reiben, Quark anrühren, Flüssigkeiten abmessen und kühlen</td></tr>
+    <tr><td>Veranstaltungstag</td><td>Tiefgekühlten oder gekühlten Kaiserschmarrn transportieren, Kräuter schneiden</td></tr>
+    <tr><td>Am Stand</td><td>Portionsweise auftauen und in Margarine auf ≥ 72 °C durcherhitzen</td></tr>
+  </table>
+  <div class="warn" style="font-size:2.3vh"><b>Wichtig:</b> Frischer Teig nicht lange stehen lassen. Mineralwasser erst kurz vor dem Braten zugeben, nicht mehr stark rühren, höchstens 5–10 Minuten quellen lassen.</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h1>Kühlen, Warmhalten, Hygiene</h1>
+  <div class="cols">
+    <div class="card">
+      <h2 class="cold">Kalt: ≤ 7 °C</h2>
+      <ul>
+        <li>Quark, Käse, Kompott, Apfelmus</li>
+        <li>Aufgetaute Ware (im Kühlschrank auftauen)</li>
+        <li>Kühlboxen mit Kühlakkus</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2 class="hot">Heiß: ≥ 65 °C</h2>
+      <ul>
+        <li>Fertiger Kaiserschmarrn</li>
+        <li>Regenerieren auf ≥ 72 °C</li>
+        <li>Maximal 2–3 Stunden warm halten</li>
+        <li>Behälter alle 20–30 Min. tauschen</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Hygiene</h2>
+      <ul>
+        <li>Krank? Nicht mit Lebensmitteln arbeiten</li>
+        <li>Hände häufig waschen</li>
+        <li>Haare gebunden, Schürze, kein Schmuck</li>
+        <li>Kasse und Ausgabe getrennt</li>
+        <li>Temperaturen stündlich notieren</li>
+      </ul>
+    </div>
+  </div>
+  <p class="small" style="margin-top:2vh"><b>Kein lauwarmer Transport.</b> Tiefgekühlt, gekühlt (≤ 7 °C) oder heiß (≥ 65 °C). Reste am Ende entsorgen.</p>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h1>Allergene, Ausstattung, nächste Schritte</h1>
+  <div class="cols">
+    <div class="card">
+      <h2>Allergene</h2>
+      <ul>
+        <li>Alle: Gluten (Weizen)</li>
+        <li>Haferdrink: Gluten; Sojadrink: Soja</li>
+        <li>Herzhaft: Milch (Käse, Quark)</li>
+        <li>Rosinen: evtl. Sulfite</li>
+        <li>Nur "vegan" nennen, wenn alles vegan ist</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Ausstattung</h2>
+      <ul>
+        <li>4 elektrische Rechauds</li>
+        <li>2 Pfannen oder 1 Grillplatte</li>
+        <li>Thermoboxen, Kühlboxen, Thermometer</li>
+        <li>75 Schalen, 75 Gabeln, 120 Servietten</li>
+        <li>Handwaschstation, Kabelbrücken, Löschdecke</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Nächste Schritte</h2>
+      <ul>
+        <li>Probecharge backen</li>
+        <li>Strom und Genehmigung klären</li>
+        <li>Einkauf und Helferliste planen</li>
+        <li>Allergen- und Preisschilder drucken</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="nav" id="nav"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const nav = document.getElementById('nav');
+  const bar = document.getElementById('bar');
+  let i = 0;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    nav.textContent = (i + 1) + " / " + slides.length;
+    nav.style.color = i === 0 ? '#ffd98a' : '#8a2d1c';
+    bar.style.width = ((i + 1) / slides.length * 100) + '%';
+  }
+
+  document.addEventListener('click', () => show(i + 1));
+  document.addEventListener('contextmenu', e => { e.preventDefault(); show(i - 1); });
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+  });
+  show(0);
+</script>
+</body>
+</html>
