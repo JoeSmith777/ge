@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Englisch-Trainer · Austausch Taiwan</title>
+<style>
+  :root { --red:#c8102e; --blue:#00247d; --bg:#f4f6fb; --ok:#1e8e3e; --bad:#d93025; --warn:#f29900; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, Segoe UI, Arial, sans-serif; background:var(--bg); color:#222; }
+  header { background:linear-gradient(90deg,var(--blue),var(--red)); color:#fff; padding:16px; text-align:center; }
+  header h1 { margin:0; font-size:1.4rem; }
+  main { max-width:760px; margin:20px auto; padding:0 12px; }
+  .panel { background:#fff; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:16px; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px; }
+  .row label { font-weight:600; min-width:90px; }
+  button, select, input { font-size:1rem; padding:8px 12px; border-radius:8px; border:1px solid #ccc; }
+  button { cursor:pointer; background:#fff; }
+  button.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+  button.primary { background:var(--red); color:#fff; border:none; }
+  .card { min-height:180px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+  .prompt { font-size:1.5rem; font-weight:600; margin:10px 0; }
+  .answer { font-size:1.3rem; color:var(--blue); margin:10px 0; }
+  .tip { font-size:.9rem; background:#fff7e0; border-left:4px solid var(--warn); padding:8px; margin-top:10px; text-align:left; width:100%; }
+  .options { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; margin-top:10px; }
+  .options button { text-align:left; }
+  .correct { background:var(--ok)!important; color:#fff!important; }
+  .wrong { background:var(--bad)!important; color:#fff!important; }
+  .feedback { font-weight:600; margin-top:8px; }
+  .stats { display:flex; justify-content:space-between; font-size:.9rem; color:#555; }
+  .bar { height:8px; background:#e0e0e0; border-radius:4px; overflow:hidden; margin-top:6px; }
+  .bar div { height:100%; background:var(--ok); transition:width .3s; }
+  .badge { font-size:.75rem; background:#eef; color:var(--blue); padding:2px 8px; border-radius:10px; }
+  input.type { width:100%; margin-top:10px; }
+  @media (max-width:500px){ .options{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>🇹🇼 Englisch-Trainer für den Schüleraustausch</h1>
+  <div>Phrasen &amp; Wortschatz · Schule · Alltag · Taiwan</div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="row"><label>Bereich:</label>
+      <button data-set="phrases" class="active">Phrasen</button>
+      <button data-set="vocab">Wortschatz</button>
+    </div>
+    <div class="row"><label>Thema:</label>
+      <select id="cat">
+        <option value="all">Alle Themen</option>
+        <option value="Schule">Schule</option>
+        <option value="Alltag">Alltag</option>
+        <option value="Taiwan">Taiwan</option>
+        <option value="Mandarin">Mandarin (Grundwortschatz)</option>
+      </select>
+    </div>
+    <div class="row"><label>Modus:</label>
+      <button data-mode="flash" class="active">Karteikarten</button>
+      <button data-mode="mc">Multiple Choice</button>
+      <button data-mode="type">Schreiben</button>
+    </div>
+    <div class="row"><label>Richtung:</label>
+      <button data-dir="de-en" class="active">DE → EN</button>
+      <button data-dir="en-de">EN → DE</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="stats">
+      <span id="pos"></span><span id="score"></span><span id="mastery"></span>
+    </div>
+    <div class="bar"><div id="bar"></div></div>
+  </section>
+
+  <section class="panel card" id="card"></section>
+
+  <section class="panel" style="text-align:center">
+    <button id="restart">🔀 Neu mischen</button>
+    <button id="reset">♻️ Lernstand zurücksetzen</button>
+  </section>
+</main>
+
+<script src="phrases.js"></script>
+<script src="vocab.js"></script>
+<script>
+const DATA = {
+  phrases: PHRASES.map(([en,de,cat,tip]) => ({en,de,cat,tip,id:'p:'+en})),
+  vocab:   VOCAB.map(([en,de,cat])     => ({en,de,cat,id:'v:'+en}))
+};
+const STORE = 'twTrainerProgress';
+let progress = JSON.parse(localStorage.getItem(STORE) || '{}');
+const S = { set:'phrases', cat:'all', mode:'flash', dir:'de-en', queue:[], idx:0, right:0, done:0, answered:false };
+const $ = id => document.getElementById(id);
+
+function save(){ localStorage.setItem(STORE, JSON.stringify(progress)); }
+function lvl(item){ return progress[item.id] || 0; }
+function setLvl(item, ok){
+  progress[item.id] = Math.max(0, Math.min(5, lvl(item) + (ok ? 1 : -1)));
+  save();
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function pool(){ return DATA[S.set].filter(x => S.cat==='all' || x.cat===S.cat); }
+
+function buildQueue(){
+  // Niedrige Lernstufen werden häufiger eingeplant
+  const q = [];
+  pool().forEach(it => { const n = 3 - Math.min(2, Math.floor(lvl(it)/2)); for(let i=0;i<n;i++) q.push(it); });
+  S.queue = shuffle(q).filter((x,i,a) => i===0 || a[i-1]!==x).slice(0, 30);
+  S.idx = 0; S.right = 0; S.done = 0;
+  render();
+}
+
+function q(it){ return S.dir==='de-en' ? it.de : it.en; }
+function a(it){ return S.dir==='de-en' ? it.en : it.de; }
+
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const zh = text.match(/[\u3000-\u303f\u3400-\u9fff\uff00-\uffef]+/g);
+  const u = new SpeechSynthesisUtterance(zh ? zh.join('') : text);
+  u.lang = zh ? 'zh-TW' : 'en-US';
+  u.rate = zh ? 0.75 : 0.9;
+  speechSynthesis.speak(u);
+}
+
+function norm(s){ return s.normalize('NFD').replace(/[\u0300-\u0307\u0309-\u036f]/g,'').normalize('NFC').toLowerCase().replace(/\(.*?\)/g,'').replace(/[^a-zäöüß0-9 ]/g,'').replace(/\s+/g,' ').trim(); }
+
+function lev(a,b){
+  const d = Array.from({length:a.length+1},(_,i)=>[i]);
+  for(let j=1;j<=b.length;j++) d[0][j]=j;
+  for(let i=1;i<=a.length;i++) for(let j=1;j<=b.length;j++)
+    d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length];
+}
+
+function updateStats(){
+  const p = pool();
+  const mastered = p.filter(x => lvl(x) >= 4).length;
+  $('pos').textContent = `Karte ${Math.min(S.idx+1,S.queue.length)} / ${S.queue.length}`;
+  $('score').textContent = `Richtig: ${S.right} / ${S.done}`;
+  $('mastery').textContent = `Sicher gelernt: ${mastered} / ${p.length}`;
+  $('bar').style.width = (p.length ? mastered/p.length*100 : 0) + '%';
+}
+
+function render(){
+  updateStats();
+  const card = $('card');
+  S.answered = false;
+  if(S.idx >= S.queue.length){
+    const pct = S.done ? Math.round(S.right/S.done*100) : 0;
+    card.innerHTML = `<div class="prompt">🎉 Runde beendet!</div>
+      <div>Ergebnis: ${S.right} von ${S.done} (${pct} %)</div><br>
+      <button class="primary" onclick="buildQueue()">Neue Runde</button>`;
+    return;
+  }
+  const it = S.queue[S.idx];
+  const head = `<span class="badge">${it.cat} · Stufe ${lvl(it)}/5</span>
+    <div class="prompt">${q(it)} ${S.dir==='en-de' ? `<button onclick="speak('${it.en.replace(/'/g,"\\'")}')">🔊</button>` : ''}</div>`;
+
+  if(S.mode==='flash'){
+    card.innerHTML = head + `<div id="ans"></div>
+      <button class="primary" id="flip">Lösung zeigen</button>`;
+    $('flip').onclick = () => {
+      $('ans').innerHTML = reveal(it);
+      $('flip').outerHTML = `<div class="row" style="justify-content:center">
+        <button class="correct" onclick="grade(true)">✔ Gewusst</button>
+        <button class="wrong" onclick="grade(false)">✘ Nochmal üben</button></div>`;
+    };
+  }
+  else if(S.mode==='mc'){
+    const others = shuffle(pool().filter(x => x!==it && x.cat===it.cat)).slice(0,3);
+    const opts = shuffle([it, ...others]);
+    card.innerHTML = head + `<div class="options">${opts.map((o,i)=>`<button data-i="${i}">${a(o)}</button>`).join('')}</div><div id="ans"></div>`;
+    card.querySelectorAll('.options button').forEach(b => b.onclick = () => {
+      if(S.answered) return;
+      const chosen = opts[b.dataset.i]; const ok = chosen===it;
+      b.classList.add(ok?'correct':'wrong');
+      card.querySelectorAll('.options button').forEach(x => { if(opts[x.dataset.i]===it) x.classList.add('correct'); });
+      finish(ok, ok ? '✔ Richtig!' : '✘ Leider falsch.');
+    });
+  }
+  else {
+    card.innerHTML = head + `<input class="type" id="inp" placeholder="Deine Übersetzung …" autocomplete="off">
+      <button class="primary" id="chk" style="margin-top:10px">Prüfen</button><div id="ans"></div>`;
+    const inp = $('inp'); inp.focus();
+    const check = () => {
+      if(S.answered){ next(); return; }
+      const user = norm(inp.value);
+      const sols = a(it).split(/\s*[\/;]\s*/).map(norm);
+      const dist = Math.min(...sols.map(s => lev(user, s)));
+      const best = Math.min(...sols.map(s => s.length));
+      const ok = dist === 0, near = !ok && dist <= Math.max(1, Math.floor(best*0.15));
+      finish(ok||near, ok ? '✔ Perfekt!' : near ? '≈ Fast richtig – achte auf die Schreibweise.' : '✘ Nicht ganz.');
+      $('chk').textContent = 'Weiter →';
+    };
+    $('chk').onclick = check;
+    inp.onkeydown = e => { if(e.key==='Enter') check(); };
+  }
+}
+
+function reveal(it){
+  return `<div class="answer">${a(it)} <button onclick="speak('${it.en.replace(/'/g,"\\'")}')">🔊</button></div>
+    ${it.tip ? `<div class="tip">💡 ${it.tip}</div>` : ''}`;
+}
+function finish(ok, msg){
+  S.answered = true;
+  const it = S.queue[S.idx];
+  setLvl(it, ok); S.done++; if(ok) S.right++;
+  $('ans').innerHTML = `<div class="feedback" style="color:${ok?'var(--ok)':'var(--bad)'}">${msg}</div>` + reveal(it) +
+    (S.mode==='mc' ? `<br><button class="primary" onclick="next()">Weiter →</button>` : '');
+  updateStats();
+}
+function grade(ok){ const it=S.queue[S.idx]; setLvl(it,ok); S.done++; if(ok) S.right++; next(); }
+function next(){ S.idx++; render(); }
+
+function bindGroup(attr, key){
+  document.querySelectorAll(`[data-${attr}]`).forEach(b => b.onclick = () => {
+    document.querySelectorAll(`[data-${attr}]`).forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); S[key] = b.dataset[attr]; buildQueue();
+  });
+}
+bindGroup('set','set'); bindGroup('mode','mode'); bindGroup('dir','dir');
+$('cat').onchange = e => { S.cat = e.target.value; buildQueue(); };
+$('restart').onclick = buildQueue;
+$('reset').onclick = () => { if(confirm('Gesamten Lernstand löschen?')){ progress={}; save(); buildQueue(); } };
+buildQueue();
+</script>
+</body>
+</html>
